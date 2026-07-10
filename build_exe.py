@@ -20,6 +20,9 @@ class ExeBuilder:
         self.dist_folder = self.project_root / "dist"
         self.build_folder = self.project_root / "build"
         self.spec_folder = self.project_root
+        # En --onedir, PyInstaller crée dist/CADASTROMANCY/ (d'après --name) :
+        # c'est ce dossier, pas dist/ directement, qui contient l'exe + ses DLL.
+        self.app_folder = self.dist_folder / "CADASTROMANCY"
     
     def log(self, message, level="INFO"):
         """Logger un message."""
@@ -112,13 +115,23 @@ class ExeBuilder:
 
         # Détection des dossiers .libs (DLL GDAL/GEOS/PROJ) à embarquer explicitement
         self.log("Recherche des dossiers .libs (DLL natives GDAL/GEOS/PROJ)...")
-        libs_folders = self.find_libs_folders(["pyogrio", "fiona", "shapely", "pyproj"])
+        # fiona volontairement exclu : geopandas utilise pyogrio comme moteur ;
+        # embarquer aussi Fiona.libs créerait deux copies de GDAL en conflit
+        # (chargement DLL ambigu -> "GDAL DLL could not be found").
+        libs_folders = self.find_libs_folders(["pyogrio", "shapely", "pyproj"])
 
         # Commande PyInstaller
         cmd = [
             sys.executable, "-m", "PyInstaller",
-            "--name=CADASTROMANCY",              # Nom de l'exécutable
-            "--onefile",                             # Un seul fichier .exe
+            "--name=CADASTROMANCY",              # Nom de l'exécutable / du dossier
+            "--onedir",                          # Dossier de sortie, PAS --onefile :
+            # --onefile ré-extrait toutes les DLL dans %TEMP% à CHAQUE lancement.
+            # Sur un poste avec antivirus strict ou stratégie de sécurité
+            # (AppLocker/SRP, courant en collectivité), cette extraction répétée
+            # dans un dossier utilisateur temporaire est bloquée -> "Accès refusé"
+            # (déjà rencontré avec fiona, maintenant avec psycopg2 : même cause).
+            # En --onedir, les DLL sont extraites UNE FOIS à la compilation, dans
+            # un dossier stable livré avec l'exe : plus d'extraction au lancement.
             # PAS de --windowed : le script utilise print() pour la progression
             # (avec --windowed, sys.stdout est None sous Windows -> crash au 1er print())
             # La fenêtre tkinter s'ouvre normalement en plus de la console.
@@ -136,12 +149,18 @@ class ExeBuilder:
             "--copy-metadata=shapely",
             "--copy-metadata=pyogrio",
             "--collect-all=sqlalchemy",              # Inclure sqlalchemy
+            # geoalchemy2 : requis par gdf.to_postgis(), importé dynamiquement
+            # par geopandas à l'intérieur de la méthode -> invisible pour
+            # l'analyse statique de PyInstaller sans cette ligne explicite.
+            "--collect-all=geoalchemy2",
             "--collect-all=dotenv",                  # Inclure python-dotenv
             "--collect-all=psycopg2",                # Inclure le driver PostgreSQL
             "--collect-all=bs4",                     # Inclure BeautifulSoup
             "--collect-all=requests",                # Inclure requests
-            "--exclude-module=pandas.tests",
-            "--exclude-module=matplotlib",
+            # Exclusion explicite : évite qu'une éventuelle installation de fiona
+            # dans l'environnement de build soit embarquée en plus de pyogrio
+            # (deux copies de GDAL en conflit = DLL introuvable/incompatible).
+            "--exclude-module=fiona",
         ]
 
         # Ajout explicite des dossiers .libs trouvés (filet de sécurité si les hooks
@@ -164,8 +183,8 @@ class ExeBuilder:
         self.log("Copie du fichier de configuration d'exemple...")
         
         env_example_src = self.project_root / "config" / ".env.example"
-        config_dest = self.dist_folder / "config"
-        config_dest.mkdir(exist_ok=True)
+        config_dest = self.app_folder / "config"
+        config_dest.mkdir(parents=True, exist_ok=True)
         
         env_example_dest = config_dest / ".env.example"
         if env_example_src.exists():
@@ -226,7 +245,7 @@ CADASTROMANCY.exe
 pause
 """
         
-        batch_file = self.dist_folder / "installer.bat"
+        batch_file = self.app_folder / "installer.bat"
         with open(batch_file, 'w', encoding='utf-8') as f:
             f.write(batch_content)
         
@@ -328,7 +347,7 @@ En cas de problème, consulter la documentation ou relancer le programme avec un
 **Bonne utilisation ! **
 """.format(build_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"), version=__version__)
         
-        readme_file = self.dist_folder / "README_COMPILATION.txt"
+        readme_file = self.app_folder / "README_COMPILATION.txt"
         with open(readme_file, 'w', encoding='utf-8') as f:
             f.write(readme_content)
         
@@ -344,13 +363,13 @@ En cas de problème, consulter la documentation ou relancer le programme avec un
             "executable": "CADASTROMANCY.exe",
             "installer": "installer.bat",
             "files": {
-                "exe": str(self.dist_folder / "CADASTROMANCY.exe"),
-                "batch": str(self.dist_folder / "installer.bat"),
-                "readme": str(self.dist_folder / "README_COMPILATION.txt")
+                "exe": str(self.app_folder / "CADASTROMANCY.exe"),
+                "batch": str(self.app_folder / "installer.bat"),
+                "readme": str(self.app_folder / "README_COMPILATION.txt")
             }
         }
         
-        manifest_file = self.dist_folder / "manifest_distribution.json"
+        manifest_file = self.app_folder / "manifest_distribution.json"
         with open(manifest_file, 'w') as f:
             json.dump(package, f, indent=2)
         
@@ -362,21 +381,22 @@ En cas de problème, consulter la documentation ou relancer le programme avec un
         print("                    COMPILATION RÉUSSIE ✅")
         print("="*70 + "\n")
         
-        exe_file = self.dist_folder / "CADASTROMANCY.exe"
+        exe_file = self.app_folder / "CADASTROMANCY.exe"
         if exe_file.exists():
-            size_mb = exe_file.stat().st_size / (1024 * 1024)
+            taille_mo = sum(f.stat().st_size for f in self.app_folder.rglob("*") if f.is_file()) / (1024 * 1024)
             print(f"   Exécutable créé : {exe_file.name}")
-            print(f"   Taille : {size_mb:.1f} MB")
-            print(f"   Chemin : {self.dist_folder}")
+            print(f"   Taille totale du dossier : {taille_mo:.1f} MB")
+            print(f"   Chemin : {self.app_folder}")
         
-        print("\n    Fichiers de distribution :")
+        print("\n    Fichiers de distribution (dans dist/CADASTROMANCY/) :")
         print(f"   ✓ CADASTROMANCY.exe          (exécutable)")
         print(f"   ✓ installer.bat                 (installation facile)")
         print(f"   ✓ README_COMPILATION.txt        (aide)")
         print(f"   ✓ manifest_distribution.json    (metadata)")
+        print(f"   ✓ _internal/                     (DLL et dépendances - NE PAS SUPPRIMER)")
         
         print("\n     Prochaines étapes :")
-        print(f"   1. Copier le dossier 'dist' complet")
+        print(f"   1. Copier le dossier 'dist/CADASTROMANCY' complet (avec _internal/)")
         print(f"   2. Renommer en : 'CADASTROMANCY_v{__version__}'")
         print(f"   3. Créer un .zip : 'CADASTROMANCY_v{__version__}.zip'")
         print(f"   4. Distribuer aux utilisateurs")
