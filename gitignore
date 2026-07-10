@@ -1,0 +1,52 @@
+# ============================================================================
+# CADASTROMANCY - .gitignore
+# ============================================================================
+
+# --- Configuration sensible (identifiants PostgreSQL) ---
+# Ne jamais versionner .env ; .env.example reste dans le repo comme modèle.
+config/.env
+.env
+
+# --- Artefacts de compilation PyInstaller ---
+# Fichiers lourds et régénérables à chaque build : à publier via GitHub Releases,
+# jamais dans le repo (cf. build_exe.py).
+dist/
+build/
+*.spec
+
+# --- Environnements virtuels ---
+venv/
+venv_build/
+env/
+.venv/
+ENV/
+
+# --- Cache et bytecode Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+
+# --- Fichiers temporaires générés par l'application ---
+telechargement/
+
+# --- Outils de dev / tests (si utilisés un jour) ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# --- Éditeurs / IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- Fichiers système ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs éventuels ---
+*.log
