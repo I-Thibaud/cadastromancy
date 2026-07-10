@@ -4,8 +4,7 @@ Import et mise à jour, dans PostgreSQL/PostGIS, du cadastre non nominatif Etala
 
 **Version** : 2.0.0 — Auteur : Thibaud IDOUX
 
-<!-- Remplacer par une capture d'écran ou un gif de l'interface / du résultat QGIS -->
-<!-- ![Aperçu de CADASTROMANCY](docs/demo.gif) -->
+![Aperçu de CADASTROMANCY](assets/demo.gif)
 
 **Sommaire**
 - [CADASTROMANCY](#cadastromancy)
@@ -185,3 +184,5 @@ Le résultat est généré dans `dist/CADASTROMANCY/` (mode `--onedir` : un doss
 - Ne jamais versionner ni partager `config/.env` (identifiants PostgreSQL en clair) — vérifié par `.gitignore`.
 - Stocker `config/.env` hors des sauvegardes publiques ou partagées.
 - Ne jamais committer le dossier `dist/` (exécutable + DLL) dans le dépôt Git — le publier via l'onglet *Releases* de GitHub à la place (fichiers volumineux, régénérables à chaque build).
+
+Programme réalisé en partie à l'aide de l'IA
