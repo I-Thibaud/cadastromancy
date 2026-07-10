@@ -1,0 +1,46 @@
+<svg width="512" height="512" viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg">
+  <title>Logo Cadastromancy</title>
+  <desc>Icône flat design : carré arrondi violet contenant une boule de cristal bleue traversée de lignes de parcelles cadastrales et de bornes jaunes, surmontée d'un croissant de lune et de petites étoiles jaunes.</desc>
+
+  <defs>
+    <clipPath id="ballClip">
+      <circle cx="340" cy="380" r="180"/>
+    </clipPath>
+  </defs>
+
+  <!-- Fond carre arrondi violet -->
+  <rect x="40" y="40" width="600" height="600" rx="140" fill="#5b3a8f" stroke="#442a6b" stroke-width="6"/>
+
+  <!-- Boule de cristal -->
+  <circle cx="340" cy="380" r="180" fill="#3a63c9" stroke="#24428f" stroke-width="6"/>
+
+  <!-- Parcelles cadastrales + bornes, clippees dans la boule -->
+  <g clip-path="url(#ballClip)">
+    <polyline points="160,300 300,260 420,290 520,250" fill="none" stroke="#cfe0ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="250,200 270,340 300,560" fill="none" stroke="#cfe0ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="160,420 340,400 520,430" fill="none" stroke="#cfe0ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="420,200 400,380 430,560" fill="none" stroke="#cfe0ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <circle cx="300" cy="260" r="8" fill="#f4c430"/>
+    <circle cx="270" cy="340" r="8" fill="#f4c430"/>
+    <circle cx="340" cy="400" r="8" fill="#f4c430"/>
+    <circle cx="400" cy="380" r="8" fill="#f4c430"/>
+
+    <ellipse cx="280" cy="310" rx="35" ry="18" fill="#ffffff" opacity="0.3" transform="rotate(-30 280 310)"/>
+  </g>
+
+  <!-- Croissant de lune -->
+  <circle cx="500" cy="170" r="50" fill="#f4c430"/>
+  <circle cx="520" cy="153" r="42" fill="#5b3a8f"/>
+
+  <!-- Etoiles / sparkles -->
+  <g transform="translate(120,150) scale(0.9)" fill="#f4c430">
+    <path d="M 0,-16 L 6,-6 L 16,0 L 6,6 L 0,16 L -6,6 L -16,0 L -6,-6 Z"/>
+  </g>
+  <g transform="translate(578,420) scale(0.7)" fill="#f4c430">
+    <path d="M 0,-16 L 6,-6 L 16,0 L 6,6 L 0,16 L -6,6 L -16,0 L -6,-6 Z"/>
+  </g>
+  <g transform="translate(150,540) scale(0.8)" fill="#f4c430">
+    <path d="M 0,-16 L 6,-6 L 16,0 L 6,6 L 0,16 L -6,6 L -16,0 L -6,-6 Z"/>
+  </g>
+</svg>
