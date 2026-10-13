@@ -44,7 +44,7 @@ Aucune installation de Python requise.
 4. Au premier lancement, la fenêtre propose de créer `config/.env` à partir du modèle — cliquer *"Éditer la configuration"* et renseigner les identifiants PostgreSQL (détail au [§3](#3-configuration--le-fichier-env)).
 5. Utiliser les boutons de l'interface pour lancer la mise à jour du cadastre et, en option, traiter un fichier DFI.
 
-*(`installer.bat` reste disponible en raccourci facultatif : il crée `config/.env` et lance l'exe en une seule étape, mais son test de présence de `psql` peut bloquer à tort si PostgreSQL est distant sans client local installé — l'application elle-même n'a pas besoin de `psql`.)*
+*(`installer.bat` reste disponible en raccourci facultatif : il crée `config/.env` et lance l'exe en une seule étape, mais son test de présence de `psql` peut bloquer à tort si PostgreSQL est distant sans client local installé : l'application elle-même n'a pas besoin de `psql`.)*
 
 ### Option B — Via Python (avancé, pour modifier le code)
 

@@ -20,7 +20,7 @@ import gzip
 import zipfile
 import shutil
 from pathlib import Path
-from datetime import datetime
+from datetime import date,datetime
 
 # interface
 from tkinter import *
@@ -165,19 +165,39 @@ def main(txt_dfi):
 #   Fonction : date de la dernière mise à jour du cadastre sur data.gouv
 # ---------------------------------
 def recup_last_date():
+    # URL de l'index des millésimes du cadastre Etalab
     url = "https://cadastre.data.gouv.fr/data/etalab-cadastre/"
+
+    # Téléchargement de la page, avec une erreur explicite si le serveur répond mal
     response = requests.get(url, timeout=60)
+    response.raise_for_status()
+
+    # Analyse du HTML de la page
     soup = BeautifulSoup(response.content, "html.parser")
 
-    list_of_links = [link.get("href") for link in soup.find_all("a") if link.get("href")]
+    # Liste des dates trouvées dans les liens de la page
+    dates_trouvees = []
+    for link in soup.find_all("a", href=True):
+        # Découpage du lien sur les "/" : "/data/etalab-cadastre/2026-06-01/"
+        # donne ["", "data", "etalab-cadastre", "2026-06-01", ""]
+        for morceau in link["href"].split("/"):
+            try:
+                # Tentative de conversion : ne réussit que si le morceau est une date AAAA-MM-JJ
+                dates_trouvees.append(datetime.strptime(morceau, "%Y-%m-%d").date())
+            except ValueError:
+                # Le morceau n'est pas une date, on l'ignore
+                continue
 
-    if len(list_of_links) >= 2:
-        date_maj = str(list_of_links[-2])
+    if dates_trouvees:
+        # Le millésime le plus récent, indépendamment de l'ordre des liens
+        date_maj = max(dates_trouvees)
         print(f"Millésime disponible en ligne  : {date_maj}")
     else:
-        date_maj = "01/01/1900"
-    return date_maj
+        # Valeur par défaut, déjà sous forme de date
+        date_maj = date(1900, 1, 1)
+        print("Aucun millésime trouvé, date par défaut : 1900-01-01")
 
+    return date_maj
 
 # ---------------------------------
 #   Fonction : téléchargement d'un fichier
@@ -222,9 +242,9 @@ def main_cadastrenn(engine, cfg):
     # ------------------------------------------------------------------
     # ETAPE 1 : VERIFICATION DE LA DATE POUR VOIR SI BESOIN DE METTRE A JOUR
     # ------------------------------------------------------------------
-    date_maj_datagouv = recup_last_date()[0:-1]
-    date_maj_datagouv = datetime.strptime(date_maj_datagouv, "%Y-%m-%d").date()
-
+    date_maj_datagouv = recup_last_date()
+    print(f"Date de mise à jour sur data.gouv.fr : {date_maj_datagouv}")
+    
     # Requête paramétrée (évite l'injection SQL)
     with engine.connect() as connection:
         result = connection.execute(
